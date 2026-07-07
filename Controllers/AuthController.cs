@@ -1,12 +1,14 @@
 ﻿using BarberShopApi.Data;
 using BarberShopApi.DTOs;
 using BarberShopApi.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+
 
 namespace BarberShopApi.Controllers;
 
@@ -24,6 +26,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("cadastro")]
+    [AllowAnonymous]
     public async Task<IActionResult> Cadastro([FromBody] CadastroDto dto)
     {
         // Verifica se email já existe
@@ -48,6 +51,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var usuario = await _db.Usuarios
