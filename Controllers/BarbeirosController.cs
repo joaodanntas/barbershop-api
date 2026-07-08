@@ -106,4 +106,42 @@ public class BarbeirosController : ControllerBase
 
         return NoContent();
     }
+
+    // Admin: cadastrar disponibilidade de um barbeiro
+    [HttpPost("{id}/disponibilidades")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AdicionarDisponibilidade(int id, [FromBody] DisponibilidadeRequestDto dto)
+    {
+        var barbeiro = await _db.Barbeiros.FindAsync(id);
+        if (barbeiro == null)
+            return NotFound(new { erro = "Barbeiro não encontrado." });
+
+        if (dto.HoraInicio >= dto.HoraFim)
+            return BadRequest(new { erro = "Hora de início deve ser antes da hora de fim." });
+
+        var disponibilidade = new Disponibilidade
+        {
+            BarbeiroId = id,
+            DiaSemana = dto.DiaSemana,
+            HoraInicio = dto.HoraInicio,
+            HoraFim = dto.HoraFim
+        };
+
+        _db.Disponibilidades.Add(disponibilidade);
+        await _db.SaveChangesAsync();
+
+        return Ok(new DisponibilidadeResponseDto(disponibilidade.Id, disponibilidade.DiaSemana, disponibilidade.HoraInicio, disponibilidade.HoraFim));
+    }
+
+    // Público: ver disponibilidade de um barbeiro
+    [HttpGet("{id}/disponibilidades")]
+    public async Task<IActionResult> ListarDisponibilidades(int id)
+    {
+        var disponibilidades = await _db.Disponibilidades
+            .Where(d => d.BarbeiroId == id)
+            .Select(d => new DisponibilidadeResponseDto(d.Id, d.DiaSemana, d.HoraInicio, d.HoraFim))
+            .ToListAsync();
+
+        return Ok(disponibilidades);
+    }
 }

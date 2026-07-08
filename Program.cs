@@ -1,4 +1,5 @@
 using BarberShopApi.Data;
+using BarberShopApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -30,8 +31,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .SetFallbackPolicy(null);       
-        
+    .SetFallbackPolicy(null);
+
+builder.Services.AddScoped<AgendamentoService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -39,7 +41,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
