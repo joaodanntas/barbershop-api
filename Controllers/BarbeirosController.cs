@@ -119,18 +119,33 @@ public class BarbeirosController : ControllerBase
         if (dto.HoraInicio >= dto.HoraFim)
             return BadRequest(new { erro = "Hora de início deve ser antes da hora de fim." });
 
+        if (dto.PausaInicio.HasValue != dto.PausaFim.HasValue)
+            return BadRequest(new { erro = "Informe início e fim da pausa juntos, ou nenhum dos dois." });
+
+        if (dto.PausaInicio.HasValue)
+        {
+            if (dto.PausaInicio >= dto.PausaFim)
+                return BadRequest(new { erro = "Início da pausa deve ser antes do fim da pausa." });
+
+            if (dto.PausaInicio < dto.HoraInicio || dto.PausaFim > dto.HoraFim)
+                return BadRequest(new { erro = "A pausa deve estar dentro do expediente." });
+        }
+
         var disponibilidade = new Disponibilidade
         {
             BarbeiroId = id,
             DiaSemana = dto.DiaSemana,
             HoraInicio = dto.HoraInicio,
-            HoraFim = dto.HoraFim
+            HoraFim = dto.HoraFim,
+            PausaInicio = dto.PausaInicio,
+            PausaFim = dto.PausaFim
         };
 
         _db.Disponibilidades.Add(disponibilidade);
         await _db.SaveChangesAsync();
 
-        return Ok(new DisponibilidadeResponseDto(disponibilidade.Id, disponibilidade.DiaSemana, disponibilidade.HoraInicio, disponibilidade.HoraFim));
+        return Ok(new DisponibilidadeResponseDto(disponibilidade.Id, disponibilidade.DiaSemana,
+            disponibilidade.HoraInicio, disponibilidade.HoraFim, disponibilidade.PausaInicio, disponibilidade.PausaFim));
     }
 
     // Público: ver disponibilidade de um barbeiro
@@ -139,7 +154,7 @@ public class BarbeirosController : ControllerBase
     {
         var disponibilidades = await _db.Disponibilidades
             .Where(d => d.BarbeiroId == id)
-            .Select(d => new DisponibilidadeResponseDto(d.Id, d.DiaSemana, d.HoraInicio, d.HoraFim))
+            .Select(d => new DisponibilidadeResponseDto(d.Id, d.DiaSemana, d.HoraInicio, d.HoraFim, d.PausaInicio, d.PausaFim))
             .ToListAsync();
 
         return Ok(disponibilidades);

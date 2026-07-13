@@ -54,5 +54,9 @@ public class AppDbContext : DbContext
             .WithMany(b => b.Disponibilidades)
             .HasForeignKey(d => d.BarbeiroId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Disponibilidade>()
+            .HasIndex(d => new { d.BarbeiroId, d.DiaSemana })
+            .IsUnique();
     }
 }

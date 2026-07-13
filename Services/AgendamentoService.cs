@@ -52,16 +52,23 @@ public class AgendamentoService
             var slotInicio = horarioAtual;
             var slotFim = horarioAtual.Add(duracao);
 
-            // 5. Verifica se esse slot conflita com algum agendamento existente
             bool temConflito = agendamentosExistentes.Any(a =>
                 slotInicio < a.DataHoraFim && slotFim > a.DataHoraInicio);
 
-            if (!temConflito)
+            bool naPausa = false;
+            if (disponibilidade.PausaInicio.HasValue && disponibilidade.PausaFim.HasValue)
+            {
+                var pausaInicioDt = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.PausaInicio.Value), DateTimeKind.Utc);
+                var pausaFimDt = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.PausaFim.Value), DateTimeKind.Utc);
+                naPausa = slotInicio < pausaFimDt && slotFim > pausaInicioDt;
+            }
+
+            if (!temConflito && !naPausa)
             {
                 slots.Add(new HorarioDisponivelDto(slotInicio, slotFim));
             }
 
-            horarioAtual = horarioAtual.AddMinutes(30); // slots de 30 em 30 minutos
+            horarioAtual = horarioAtual.AddMinutes(30);
         }
 
         return slots;

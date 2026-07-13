@@ -9,6 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -35,6 +44,7 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddScoped<AgendamentoService>();
 var app = builder.Build();
+app.UseCors("FrontendPolicy");
 
 if (app.Environment.IsDevelopment())
 {
