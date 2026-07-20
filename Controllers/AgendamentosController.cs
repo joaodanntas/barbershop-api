@@ -16,11 +16,13 @@ public class AgendamentosController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly AgendamentoService _agendamentoService;
+    private readonly EmailService _emailService;
 
-    public AgendamentosController(AppDbContext db, AgendamentoService agendamentoService)
+    public AgendamentosController(AppDbContext db, AgendamentoService agendamentoService, EmailService emailService)
     {
         _db = db;
         _agendamentoService = agendamentoService;
+        _emailService = emailService;
     }
 
     // Público: ver horários disponíveis de um barbeiro numa data
@@ -79,6 +81,26 @@ public class AgendamentosController : ControllerBase
         {
             // A constraint única do banco impediu o agendamento duplicado
             return Conflict(new { erro = "Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário." });
+        }
+
+        // Envia e-mail de confirmação (não bloqueia o fluxo se falhar)
+        var usuario = await _db.Usuarios.FindAsync(usuarioId);
+        if (usuario != null)
+        {
+            var dataFormatada = dataHoraInicio.ToString("dd/MM/yyyy 'às' HH:mm");
+            var corpoHtml = $@"
+                <h2>Agendamento solicitado!</h2>
+                <p>Olá, {usuario.Nome}!</p>
+                <p>Seu agendamento na <strong>RZR Barber Shop</strong> foi recebido com sucesso:</p>
+                <ul>
+                    <li><strong>Serviço:</strong> {servico.Nome}</li>
+                    <li><strong>Barbeiro:</strong> {barbeiro.Nome}</li>
+                    <li><strong>Data/Hora:</strong> {dataFormatada}</li>
+                </ul>
+                <p>Aguarde a confirmação do barbeiro. Você receberá um novo e-mail assim que for confirmado.</p>
+            ";
+
+            await _emailService.EnviarAsync(usuario.Email, "Agendamento recebido - RZR Barber Shop", corpoHtml);
         }
 
         return CreatedAtAction(nameof(MeusAgendamentos), new { id = agendamento.Id },

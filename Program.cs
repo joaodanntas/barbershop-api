@@ -43,6 +43,7 @@ builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(null);
 
 builder.Services.AddScoped<AgendamentoService>();
+builder.Services.AddScoped<EmailService>();
 var app = builder.Build();
 app.UseCors("FrontendPolicy");
 
