@@ -135,7 +135,12 @@ public class AgendamentosController : ControllerBase
     {
         var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        var agendamento = await _db.Agendamentos.FindAsync(id);
+        var agendamento = await _db.Agendamentos
+            .Include(a => a.Usuario)
+            .Include(a => a.Servico)
+            .Include(a => a.Barbeiro)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
         if (agendamento == null)
             return NotFound(new { erro = "Agendamento não encontrado." });
 
@@ -144,6 +149,19 @@ public class AgendamentosController : ControllerBase
 
         agendamento.Status = "Cancelado";
         await _db.SaveChangesAsync();
+
+        var dataFormatada = agendamento.DataHoraInicio.ToString("dd/MM/yyyy 'às' HH:mm");
+        var corpoHtml = $@"
+            <h2>Agendamento cancelado</h2>
+            <p>Olá, {agendamento.Usuario.Nome}!</p>
+            <p>Seu agendamento foi cancelado com sucesso:</p>
+            <ul>
+                <li><strong>Serviço:</strong> {agendamento.Servico.Nome}</li>
+                <li><strong>Barbeiro:</strong> {agendamento.Barbeiro.Nome}</li>
+                <li><strong>Data/Hora:</strong> {dataFormatada}</li>
+            </ul>
+        ";
+        await _emailService.EnviarAsync(agendamento.Usuario.Email, "Agendamento cancelado - RZR Barber Shop", corpoHtml);
 
         return NoContent();
     }
@@ -171,7 +189,12 @@ public class AgendamentosController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AtualizarStatus(int id, [FromBody] AtualizarStatusDto dto)
     {
-        var agendamento = await _db.Agendamentos.FindAsync(id);
+        var agendamento = await _db.Agendamentos
+            .Include(a => a.Usuario)
+            .Include(a => a.Servico)
+            .Include(a => a.Barbeiro)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
         if (agendamento == null)
             return NotFound(new { erro = "Agendamento não encontrado." });
 
@@ -180,6 +203,40 @@ public class AgendamentosController : ControllerBase
 
         agendamento.Status = dto.Status;
         await _db.SaveChangesAsync();
+
+        // Envia e-mail de acordo com o novo status
+        var dataFormatada = agendamento.DataHoraInicio.ToString("dd/MM/yyyy 'às' HH:mm");
+
+        if (dto.Status == "Confirmado")
+        {
+            var corpoHtml = $@"
+            <h2>Agendamento confirmado!</h2>
+            <p>Olá, {agendamento.Usuario.Nome}!</p>
+            <p>Seu agendamento foi <strong>confirmado</strong> pelo barbeiro:</p>
+            <ul>
+                <li><strong>Serviço:</strong> {agendamento.Servico.Nome}</li>
+                <li><strong>Barbeiro:</strong> {agendamento.Barbeiro.Nome}</li>
+                <li><strong>Data/Hora:</strong> {dataFormatada}</li>
+            </ul>
+            <p>Te esperamos na RZR Barber Shop!</p>
+        ";
+            await _emailService.EnviarAsync(agendamento.Usuario.Email, "Agendamento confirmado - RZR Barber Shop", corpoHtml);
+        }
+        else if (dto.Status == "Cancelado")
+        {
+            var corpoHtml = $@"
+            <h2>Agendamento cancelado</h2>
+            <p>Olá, {agendamento.Usuario.Nome}!</p>
+            <p>Seu agendamento foi <strong>cancelado</strong> pelo barbeiro:</p>
+            <ul>
+                <li><strong>Serviço:</strong> {agendamento.Servico.Nome}</li>
+                <li><strong>Barbeiro:</strong> {agendamento.Barbeiro.Nome}</li>
+                <li><strong>Data/Hora:</strong> {dataFormatada}</li>
+            </ul>
+            <p>Se quiser reagendar, é só acessar o site novamente.</p>
+        ";
+            await _emailService.EnviarAsync(agendamento.Usuario.Email, "Agendamento cancelado - RZR Barber Shop", corpoHtml);
+        }
 
         return NoContent();
     }
