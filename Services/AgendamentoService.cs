@@ -29,8 +29,8 @@ public class AgendamentoService
             return new List<HorarioDisponivelDto>(); // barbeiro não trabalha nesse dia
 
         // 3. Busca agendamentos já existentes do barbeiro naquele dia (que não estão cancelados)
-        var inicioDia = DateTime.SpecifyKind(data.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
-        var fimDia = DateTime.SpecifyKind(data.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
+        var inicioDia = DateTime.SpecifyKind(data.ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified);
+        var fimDia = DateTime.SpecifyKind(data.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Unspecified);
 
         var agendamentosExistentes = await _db.Agendamentos
             .Where(a => a.BarbeiroId == barbeiroId
@@ -44,8 +44,8 @@ public class AgendamentoService
         var slots = new List<HorarioDisponivelDto>();
         var duracao = TimeSpan.FromMinutes(servico.DuracaoMinutos);
 
-        var horarioAtual = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.HoraInicio), DateTimeKind.Utc);
-        var horarioFimExpediente = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.HoraFim), DateTimeKind.Utc);
+        var horarioAtual = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.HoraInicio), DateTimeKind.Unspecified);
+        var horarioFimExpediente = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.HoraFim), DateTimeKind.Unspecified);
 
         while (horarioAtual.Add(duracao) <= horarioFimExpediente)
         {
@@ -58,8 +58,8 @@ public class AgendamentoService
             bool naPausa = false;
             if (disponibilidade.PausaInicio.HasValue && disponibilidade.PausaFim.HasValue)
             {
-                var pausaInicioDt = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.PausaInicio.Value), DateTimeKind.Utc);
-                var pausaFimDt = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.PausaFim.Value), DateTimeKind.Utc);
+                var pausaInicioDt = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.PausaInicio.Value), DateTimeKind.Unspecified);
+                var pausaFimDt = DateTime.SpecifyKind(data.ToDateTime(disponibilidade.PausaFim.Value), DateTimeKind.Unspecified);
                 naPausa = slotInicio < pausaFimDt && slotFim > pausaInicioDt;
             }
 

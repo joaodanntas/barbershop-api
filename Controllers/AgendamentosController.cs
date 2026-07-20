@@ -2,6 +2,7 @@
 using BarberShopApi.DTOs;
 using BarberShopApi.Models;
 using BarberShopApi.Services;
+using BarberShopApi.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,7 @@ public class AgendamentosController : ControllerBase
         [FromQuery] int servicoId,
         [FromQuery] DateOnly data)
     {
-        if (data < DateOnly.FromDateTime(DateTime.Today))
+        if (data < DateOnly.FromDateTime(TimeHelper.AgoraBrasil()))
             return BadRequest(new { erro = "Não é possível consultar horários em datas passadas." });
 
         var horarios = await _agendamentoService.GetHorariosDisponiveis(barbeiroId, servicoId, data);
@@ -51,10 +52,10 @@ public class AgendamentosController : ControllerBase
         if (barbeiro == null || !barbeiro.Ativo)
             return BadRequest(new { erro = "Barbeiro inválido." });
 
-        if (dto.DataHoraInicio < DateTime.UtcNow)
+        if (dto.DataHoraInicio < TimeHelper.AgoraBrasil())
             return BadRequest(new { erro = "Não é possível agendar em data/hora passada." });
 
-        var dataHoraInicio = DateTime.SpecifyKind(dto.DataHoraInicio, DateTimeKind.Utc);
+        var dataHoraInicio = DateTime.SpecifyKind(dto.DataHoraInicio, DateTimeKind.Unspecified);
         var dataHoraFim = dataHoraInicio.AddMinutes(servico.DuracaoMinutos);
 
         var agendamento = new Agendamento

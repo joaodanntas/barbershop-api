@@ -58,5 +58,13 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Disponibilidade>()
             .HasIndex(d => new { d.BarbeiroId, d.DiaSemana })
             .IsUnique();
+
+        modelBuilder.Entity<Agendamento>()
+            .Property(a => a.DataHoraInicio)
+            .HasColumnType("timestamp without time zone");
+
+        modelBuilder.Entity<Agendamento>()
+            .Property(a => a.DataHoraFim)
+            .HasColumnType("timestamp without time zone");
     }
 }
