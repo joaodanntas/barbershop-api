@@ -21,6 +21,13 @@ public class AgendamentoService
         if (servico == null || !servico.Ativo)
             return new List<HorarioDisponivelDto>();
 
+        // Verifica se a data está bloqueada (globalmente ou para esse barbeiro específico)
+        var dataBloqueada = await _db.BloqueiosData
+        .AnyAsync(bd => bd.Data == data && (bd.BarbeiroId == null || bd.BarbeiroId == barbeiroId));
+
+        if (dataBloqueada)
+            return new List<HorarioDisponivelDto>();
+
         // Horário mínimo permitido = agora + antecedência mínima do serviço
         var horarioMinimoPermitido = TimeHelper.AgoraBrasil().AddMinutes(servico.AntecedenciaMinimaMinutos);
 

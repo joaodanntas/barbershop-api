@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<Servico> Servicos { get; set; }
     public DbSet<Disponibilidade> Disponibilidades { get; set; }
     public DbSet<Agendamento> Agendamentos { get; set; }
+    public DbSet<BloqueioData> BloqueiosData { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,5 +67,23 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Agendamento>()
             .Property(a => a.DataHoraFim)
             .HasColumnType("timestamp without time zone");
+
+        modelBuilder.Entity<BloqueioData>()
+            .HasOne(bd => bd.Barbeiro)
+            .WithMany()
+            .HasForeignKey(bd => bd.BarbeiroId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Impede duplicar bloqueio do MESMO barbeiro na MESMA data
+        modelBuilder.Entity<BloqueioData>()
+            .HasIndex(bd => new { bd.BarbeiroId, bd.Data })
+            .IsUnique()
+            .HasFilter("\"BarbeiroId\" IS NOT NULL");
+
+        // Impede duplicar bloqueio GLOBAL (BarbeiroId nulo) na MESMA data
+        modelBuilder.Entity<BloqueioData>()
+            .HasIndex(bd => bd.Data)
+            .IsUnique()
+            .HasFilter("\"BarbeiroId\" IS NULL");
     }
 }
