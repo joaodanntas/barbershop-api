@@ -3,7 +3,8 @@
 public record ServicoRequestDto(
     string Nome,
     int DuracaoMinutos,
-    decimal Preco
+    decimal Preco,
+    int AntecedenciaMinimaMinutos
 );
 
 public record ServicoResponseDto(
@@ -11,5 +12,6 @@ public record ServicoResponseDto(
     string Nome,
     int DuracaoMinutos,
     decimal Preco,
-    bool Ativo
+    bool Ativo,
+    int AntecedenciaMinimaMinutos
 );

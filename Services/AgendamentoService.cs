@@ -1,5 +1,6 @@
 ﻿using BarberShopApi.Data;
 using BarberShopApi.DTOs;
+using BarberShopApi.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace BarberShopApi.Services;
@@ -19,6 +20,9 @@ public class AgendamentoService
         var servico = await _db.Servicos.FindAsync(servicoId);
         if (servico == null || !servico.Ativo)
             return new List<HorarioDisponivelDto>();
+
+        // Horário mínimo permitido = agora + antecedência mínima do serviço
+        var horarioMinimoPermitido = TimeHelper.AgoraBrasil().AddMinutes(servico.AntecedenciaMinimaMinutos);
 
         // 2. Busca a disponibilidade do barbeiro naquele dia da semana
         var diaSemana = data.DayOfWeek;
@@ -52,6 +56,8 @@ public class AgendamentoService
             var slotInicio = horarioAtual;
             var slotFim = horarioAtual.Add(duracao);
 
+            bool antesDoPermitido = slotInicio < horarioMinimoPermitido;
+
             bool temConflito = agendamentosExistentes.Any(a =>
                 slotInicio < a.DataHoraFim && slotFim > a.DataHoraInicio);
 
@@ -63,7 +69,7 @@ public class AgendamentoService
                 naPausa = slotInicio < pausaFimDt && slotFim > pausaInicioDt;
             }
 
-            if (!temConflito && !naPausa)
+            if (!antesDoPermitido && !temConflito && !naPausa)
             {
                 slots.Add(new HorarioDisponivelDto(slotInicio, slotFim));
             }

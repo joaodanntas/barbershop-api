@@ -24,7 +24,7 @@ public class ServicosController : ControllerBase
     {
         var servicos = await _db.Servicos
             .Where(s => s.Ativo)
-            .Select(s => new ServicoResponseDto(s.Id, s.Nome, s.DuracaoMinutos, s.Preco, s.Ativo))
+            .Select(s => new ServicoResponseDto(s.Id, s.Nome, s.DuracaoMinutos, s.Preco, s.Ativo, s.AntecedenciaMinimaMinutos))
             .ToListAsync();
 
         return Ok(servicos);
@@ -41,18 +41,22 @@ public class ServicosController : ControllerBase
         if (dto.Preco <= 0)
             return BadRequest(new { erro = "Preço deve ser maior que zero." });
 
+        if (dto.AntecedenciaMinimaMinutos < 0)
+            return BadRequest(new { erro = "Antecedência mínima não pode ser negativa." });
+
         var servico = new Servico
         {
             Nome = dto.Nome,
             DuracaoMinutos = dto.DuracaoMinutos,
-            Preco = dto.Preco
+            Preco = dto.Preco,
+            AntecedenciaMinimaMinutos = dto.AntecedenciaMinimaMinutos
         };
 
         _db.Servicos.Add(servico);
         await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(ListarAtivos),
-            new ServicoResponseDto(servico.Id, servico.Nome, servico.DuracaoMinutos, servico.Preco, servico.Ativo));
+            new ServicoResponseDto(servico.Id, servico.Nome, servico.DuracaoMinutos, servico.Preco, servico.Ativo, servico.AntecedenciaMinimaMinutos));
     }
 
     // Admin: editar serviço
@@ -70,13 +74,17 @@ public class ServicosController : ControllerBase
         if (dto.Preco <= 0)
             return BadRequest(new { erro = "Preço deve ser maior que zero." });
 
+        if (dto.AntecedenciaMinimaMinutos < 0)
+            return BadRequest(new { erro = "Antecedência mínima não pode ser negativa." });
+
         servico.Nome = dto.Nome;
         servico.DuracaoMinutos = dto.DuracaoMinutos;
         servico.Preco = dto.Preco;
+        servico.AntecedenciaMinimaMinutos = dto.AntecedenciaMinimaMinutos;
 
         await _db.SaveChangesAsync();
 
-        return Ok(new ServicoResponseDto(servico.Id, servico.Nome, servico.DuracaoMinutos, servico.Preco, servico.Ativo));
+        return Ok(new ServicoResponseDto(servico.Id, servico.Nome, servico.DuracaoMinutos, servico.Preco, servico.Ativo, servico.AntecedenciaMinimaMinutos));
     }
 
     // Admin: desativar serviço
