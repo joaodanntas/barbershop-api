@@ -44,6 +44,7 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddScoped<AgendamentoService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddHostedService<LembreteAgendamentoService>();
 var app = builder.Build();
 app.UseCors("FrontendPolicy");
 

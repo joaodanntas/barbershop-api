@@ -11,6 +11,7 @@
         public string Status { get; set; } = "Pendente"; // Pendente, Confirmado, Cancelado
         public string? TokenCancelamento { get; set; }
         public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+        public bool LembreteEnviado { get; set; } = false;
 
         public Usuario Usuario { get; set; } = null!;
         public Barbeiro Barbeiro { get; set; } = null!;
