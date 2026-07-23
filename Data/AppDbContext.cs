@@ -21,10 +21,11 @@ public class AppDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
-        // Proteção contra agendamento duplicado (mesmo barbeiro, mesmo horário)
+        // Proteção contra agendamento duplicado (mesmo barbeiro, mesmo horário) - exceto cancelados
         modelBuilder.Entity<Agendamento>()
             .HasIndex(a => new { a.BarbeiroId, a.DataHoraInicio })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"Status\" <> 'Cancelado'");
 
         // Precisão do campo Preco no banco
         modelBuilder.Entity<Servico>()
