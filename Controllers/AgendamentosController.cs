@@ -171,11 +171,14 @@ public class AgendamentosController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TodosAgendamentos()
     {
+        var hoje = DateOnly.FromDateTime(TimeHelper.AgoraBrasil()).ToDateTime(TimeOnly.MinValue);
+
         var agendamentos = await _db.Agendamentos
             .Include(a => a.Barbeiro)
             .Include(a => a.Servico)
             .Include(a => a.Usuario)
-            .OrderByDescending(a => a.DataHoraInicio)
+            .Where(a => a.DataHoraInicio >= hoje || a.Status == "Pendente")
+            .OrderBy(a => a.DataHoraInicio)
             .Select(a => new AgendamentoResponseDto(
                 a.Id, a.Barbeiro.Nome, a.Servico.Nome,
                 a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome))
