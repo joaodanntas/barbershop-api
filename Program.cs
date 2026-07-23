@@ -13,7 +13,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://joaodanntas.github.io")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
