@@ -159,4 +159,66 @@ public class BarbeirosController : ControllerBase
 
         return Ok(disponibilidades);
     }
+
+    // Admin: editar uma disponibilidade específica
+    [HttpPut("{barbeiroId}/disponibilidades/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> EditarDisponibilidade(int barbeiroId, int id, [FromBody] DisponibilidadeRequestDto dto)
+    {
+        var disponibilidade = await _db.Disponibilidades
+            .FirstOrDefaultAsync(d => d.Id == id && d.BarbeiroId == barbeiroId);
+
+        if (disponibilidade == null)
+            return NotFound(new { erro = "Disponibilidade não encontrada." });
+
+        if (dto.HoraInicio >= dto.HoraFim)
+            return BadRequest(new { erro = "Hora de início deve ser antes da hora de fim." });
+
+        if (dto.PausaInicio.HasValue != dto.PausaFim.HasValue)
+            return BadRequest(new { erro = "Informe início e fim da pausa juntos, ou nenhum dos dois." });
+
+        if (dto.PausaInicio.HasValue)
+        {
+            if (dto.PausaInicio >= dto.PausaFim)
+                return BadRequest(new { erro = "Início da pausa deve ser antes do fim da pausa." });
+
+            if (dto.PausaInicio < dto.HoraInicio || dto.PausaFim > dto.HoraFim)
+                return BadRequest(new { erro = "A pausa deve estar dentro do expediente." });
+        }
+
+        disponibilidade.DiaSemana = dto.DiaSemana;
+        disponibilidade.HoraInicio = dto.HoraInicio;
+        disponibilidade.HoraFim = dto.HoraFim;
+        disponibilidade.PausaInicio = dto.PausaInicio;
+        disponibilidade.PausaFim = dto.PausaFim;
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return Conflict(new { erro = "Já existe uma disponibilidade cadastrada para esse dia da semana." });
+        }
+
+        return Ok(new DisponibilidadeResponseDto(disponibilidade.Id, disponibilidade.DiaSemana,
+            disponibilidade.HoraInicio, disponibilidade.HoraFim, disponibilidade.PausaInicio, disponibilidade.PausaFim));
+    }
+
+    // Admin: remover uma disponibilidade específica
+    [HttpDelete("{barbeiroId}/disponibilidades/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> RemoverDisponibilidade(int barbeiroId, int id)
+    {
+        var disponibilidade = await _db.Disponibilidades
+            .FirstOrDefaultAsync(d => d.Id == id && d.BarbeiroId == barbeiroId);
+
+        if (disponibilidade == null)
+            return NotFound(new { erro = "Disponibilidade não encontrada." });
+
+        _db.Disponibilidades.Remove(disponibilidade);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
