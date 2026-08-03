@@ -1,6 +1,7 @@
 ﻿using BarberShopApi.Data;
 using BarberShopApi.DTOs;
 using BarberShopApi.Models;
+using BarberShopApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +19,15 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
+    private readonly EmailService _emailService;
 
-    public AuthController(AppDbContext db, IConfiguration config)
+    private const string FrontendResetUrl = "https://joaodanntas.github.io/barbershop-frontend/redefinir-senha.html";
+
+    public AuthController(AppDbContext db, IConfiguration config, EmailService emailService)
     {
         _db = db;
         _config = config;
+        _emailService = emailService;
     }
 
     [HttpPost("cadastro")]
@@ -63,6 +68,54 @@ public class AuthController : ControllerBase
         var token = GerarToken(usuario);
 
         return Ok(new AuthResponseDto(token, usuario.Nome, usuario.Email, usuario.Perfil));
+    }
+
+    // Solicita redefinição de senha (envia e-mail com token)
+    [HttpPost("esqueci-senha")]
+    [AllowAnonymous]
+    public async Task<IActionResult> EsqueciSenha([FromBody] EsqueciSenhaDto dto)
+    {
+        var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+        // Resposta idêntica exista ou não o e-mail — evita que alguém descubra
+        // quais e-mails estão cadastrados testando esse endpoint (enumeration attack)
+        if (usuario == null)
+            return Ok(new { mensagem = "Se esse e-mail estiver cadastrado, você receberá instruções em instantes." });
+
+        var token = Guid.NewGuid().ToString("N");
+        usuario.TokenRedefinicaoSenha = token;
+        usuario.TokenRedefinicaoExpiraEm = DateTime.UtcNow.AddHours(1);
+        await _db.SaveChangesAsync();
+
+        var link = $"{FrontendResetUrl}?token={token}";
+        var corpoHtml = $@"
+            <h2>Redefinição de senha</h2>
+            <p>Olá, {usuario.Nome}!</p>
+            <p>Recebemos uma solicitação para redefinir sua senha na RZR Barber Shop.</p>
+            <p><a href=""{link}"">Clique aqui para criar uma nova senha</a></p>
+            <p>Esse link expira em 1 hora. Se você não solicitou isso, pode ignorar este e-mail com segurança.</p>
+        ";
+        await _emailService.EnviarAsync(usuario.Email, "Redefinição de senha - RZR Barber Shop", corpoHtml);
+
+        return Ok(new { mensagem = "Se esse e-mail estiver cadastrado, você receberá instruções em instantes." });
+    }
+
+    // Confirma a redefinição, usando o token recebido por e-mail
+    [HttpPost("redefinir-senha")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RedefinirSenha([FromBody] RedefinirSenhaDto dto)
+    {
+        var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.TokenRedefinicaoSenha == dto.Token);
+
+        if (usuario == null || usuario.TokenRedefinicaoExpiraEm == null || usuario.TokenRedefinicaoExpiraEm < DateTime.UtcNow)
+            return BadRequest(new { erro = "Link inválido ou expirado. Solicite uma nova redefinição." });
+
+        usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.NovaSenha);
+        usuario.TokenRedefinicaoSenha = null;
+        usuario.TokenRedefinicaoExpiraEm = null;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { mensagem = "Senha redefinida com sucesso! Você já pode fazer login." });
     }
 
     private string GerarToken(Usuario usuario)

@@ -9,6 +9,8 @@
         public string Perfil { get; set; } = "Cliente"; // "Cliente" ou "Admin"
         public string? Telefone { get; set; }
         public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+        public string? TokenRedefinicaoSenha { get; set; }
+        public DateTime? TokenRedefinicaoExpiraEm { get; set; }
 
         public ICollection<Agendamento> Agendamentos { get; set; } = new List<Agendamento>();
     }
