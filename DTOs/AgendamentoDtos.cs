@@ -24,3 +24,10 @@ public record AgendamentoResponseDto(
 public record AtualizarStatusDto(
     string Status // "Confirmado" ou "Cancelado"
 );
+
+public record PaginaDto<T>(
+    List<T> Itens,
+    int PaginaAtual,
+    int TotalPaginas,
+    int TotalItens
+);

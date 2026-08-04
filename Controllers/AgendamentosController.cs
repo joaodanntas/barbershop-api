@@ -169,22 +169,32 @@ public class AgendamentosController : ControllerBase
     // Admin: ver todos os agendamentos
     [HttpGet("admin/todos")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> TodosAgendamentos()
+    public async Task<IActionResult> TodosAgendamentos([FromQuery] int pagina = 1, [FromQuery] int tamanhoPagina = 15)
     {
+        if (pagina < 1) pagina = 1;
+        if (tamanhoPagina < 1 || tamanhoPagina > 100) tamanhoPagina = 15;
+
         var hoje = DateOnly.FromDateTime(TimeHelper.AgoraBrasil()).ToDateTime(TimeOnly.MinValue);
 
-        var agendamentos = await _db.Agendamentos
+        var query = _db.Agendamentos
             .Include(a => a.Barbeiro)
             .Include(a => a.Servico)
             .Include(a => a.Usuario)
             .Where(a => a.DataHoraInicio >= hoje || a.Status == "Pendente")
-            .OrderBy(a => a.DataHoraInicio)
+            .OrderBy(a => a.DataHoraInicio);
+
+        var totalItens = await query.CountAsync();
+        var totalPaginas = (int)Math.Ceiling(totalItens / (double)tamanhoPagina);
+
+        var agendamentos = await query
+            .Skip((pagina - 1) * tamanhoPagina)
+            .Take(tamanhoPagina)
             .Select(a => new AgendamentoResponseDto(
                 a.Id, a.Barbeiro.Nome, a.Servico.Nome,
                 a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome))
             .ToListAsync();
 
-        return Ok(agendamentos);
+        return Ok(new PaginaDto<AgendamentoResponseDto>(agendamentos, pagina, totalPaginas, totalItens));
     }
 
     // Admin: confirmar ou cancelar um agendamento
