@@ -1,3 +1,5 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using BarberShopApi.Data;
 using BarberShopApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -42,6 +44,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(null);
 
@@ -50,6 +67,7 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddHostedService<LembreteAgendamentoService>();
 var app = builder.Build();
 app.UseCors("FrontendPolicy");
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
