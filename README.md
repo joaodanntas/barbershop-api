@@ -3,7 +3,9 @@
 Sistema completo de agendamento online para barbearias, com backend em ASP.NET Core, autenticação JWT, notificações automáticas por e-mail e painel administrativo. Projeto em produção, atendendo clientes reais.
 
 🔗 **Demo:** [barbershop-api-acij.onrender.com](https://barbershop-api-acij.onrender.com/api/servicos)
+
 🔗 **Frontend (site do cliente):** [joaodanntas.github.io/barbershop-frontend](https://joaodanntas.github.io/barbershop-frontend/)
+
 🔗 **Repositório do frontend:** [barbershop-frontend](https://github.com/joaodanntas/barbershop-frontend)
 
 ---
