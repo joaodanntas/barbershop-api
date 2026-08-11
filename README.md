@@ -118,7 +118,7 @@ BarberShopApi/
 
 ## 👤 Autor
 
-**João Gabriel Dantas**
+**João Dantas**
 [LinkedIn](https://linkedin.com/in/joaodanntas) · [GitHub](https://github.com/joaodanntas)
 
 ---
