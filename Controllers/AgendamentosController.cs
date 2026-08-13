@@ -122,7 +122,7 @@ public class AgendamentosController : ControllerBase
             .OrderByDescending(a => a.DataHoraInicio)
             .Select(a => new AgendamentoResponseDto(
                 a.Id, a.Barbeiro.Nome, a.Servico.Nome,
-                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome))
+                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome, a.CanceladoPor))
             .ToListAsync();
 
         return Ok(agendamentos);
@@ -148,6 +148,7 @@ public class AgendamentosController : ControllerBase
             return Forbid();
 
         agendamento.Status = "Cancelado";
+        agendamento.CanceladoPor = "Cliente";
         await _db.SaveChangesAsync();
 
         var dataFormatada = agendamento.DataHoraInicio.ToString("dd/MM/yyyy 'às' HH:mm");
@@ -191,7 +192,7 @@ public class AgendamentosController : ControllerBase
             .Take(tamanhoPagina)
             .Select(a => new AgendamentoResponseDto(
                 a.Id, a.Barbeiro.Nome, a.Servico.Nome,
-                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome))
+                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome, a.CanceladoPor))
             .ToListAsync();
 
         return Ok(new PaginaDto<AgendamentoResponseDto>(agendamentos, pagina, totalPaginas, totalItens));
@@ -215,6 +216,10 @@ public class AgendamentosController : ControllerBase
             return BadRequest(new { erro = "Status inválido. Use 'Confirmado' ou 'Cancelado'." });
 
         agendamento.Status = dto.Status;
+        if (dto.Status == "Cancelado")
+        {
+            agendamento.CanceladoPor = "Barbeiro";
+        }
         await _db.SaveChangesAsync();
 
         // Envia e-mail de acordo com o novo status

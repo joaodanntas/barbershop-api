@@ -8,7 +8,8 @@
         public int ServicoId { get; set; }
         public DateTime DataHoraInicio { get; set; }
         public DateTime DataHoraFim { get; set; }
-        public string Status { get; set; } = "Pendente"; // Pendente, Confirmado, Cancelado
+        public string Status { get; set; } = "Pendente";
+        public string? CanceladoPor { get; set; }
         public string? TokenCancelamento { get; set; }
         public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
         public bool LembreteEnviado { get; set; } = false;
