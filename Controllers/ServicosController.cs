@@ -1,9 +1,11 @@
 ﻿using BarberShopApi.Data;
 using BarberShopApi.DTOs;
 using BarberShopApi.Models;
+using BarberShopApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BarberShopApi.Controllers;
 
@@ -12,10 +14,12 @@ namespace BarberShopApi.Controllers;
 public class ServicosController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly LogAdminService _logAdminService;
 
-    public ServicosController(AppDbContext db)
+    public ServicosController(AppDbContext db, LogAdminService logAdminService)
     {
         _db = db;
+        _logAdminService = logAdminService;
     }
 
     // Público: qualquer um pode ver os serviços disponíveis
@@ -55,6 +59,11 @@ public class ServicosController : ControllerBase
         _db.Servicos.Add(servico);
         await _db.SaveChangesAsync();
 
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "CriouServico", "Servico", servico.Id,
+            $"Nome: {servico.Nome} · Preço: {servico.Preco}");
+
         return CreatedAtAction(nameof(ListarAtivos),
             new ServicoResponseDto(servico.Id, servico.Nome, servico.DuracaoMinutos, servico.Preco, servico.Ativo, servico.AntecedenciaMinimaMinutos));
     }
@@ -84,6 +93,11 @@ public class ServicosController : ControllerBase
 
         await _db.SaveChangesAsync();
 
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "EditouServico", "Servico", servico.Id,
+            $"Nome: {servico.Nome} · Preço: {servico.Preco}");
+
         return Ok(new ServicoResponseDto(servico.Id, servico.Nome, servico.DuracaoMinutos, servico.Preco, servico.Ativo, servico.AntecedenciaMinimaMinutos));
     }
 
@@ -99,6 +113,11 @@ public class ServicosController : ControllerBase
         servico.Ativo = false;
         await _db.SaveChangesAsync();
 
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "DesativouServico", "Servico", servico.Id,
+            $"Nome: {servico.Nome}");
+
         return NoContent();
     }
 
@@ -113,6 +132,11 @@ public class ServicosController : ControllerBase
 
         servico.Ativo = true;
         await _db.SaveChangesAsync();
+
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "AtivouServico", "Servico", servico.Id,
+            $"Nome: {servico.Nome}");
 
         return NoContent();
     }

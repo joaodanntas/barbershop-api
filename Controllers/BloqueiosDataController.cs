@@ -1,9 +1,11 @@
 ﻿using BarberShopApi.Data;
 using BarberShopApi.DTOs;
 using BarberShopApi.Models;
+using BarberShopApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BarberShopApi.Controllers;
 
@@ -13,10 +15,12 @@ namespace BarberShopApi.Controllers;
 public class BloqueiosDataController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly LogAdminService _logAdminService;
 
-    public BloqueiosDataController(AppDbContext db)
+    public BloqueiosDataController(AppDbContext db, LogAdminService logAdminService)
     {
         _db = db;
+        _logAdminService = logAdminService;
     }
 
     // Admin: listar todos os bloqueios (globais + individuais)
@@ -34,6 +38,7 @@ public class BloqueiosDataController : ControllerBase
     }
 
     // Admin: criar bloqueio (global ou por barbeiro)
+    [HttpPost]
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] BloqueioDataRequestDto dto)
     {
@@ -63,6 +68,12 @@ public class BloqueiosDataController : ControllerBase
             return Conflict(new { erro = $"Já existe um bloqueio para {alvo} nessa data." });
         }
 
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        var alvoDetalhe = dto.BarbeiroId.HasValue ? $"BarbeiroId: {dto.BarbeiroId}" : "Global (todos os barbeiros)";
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "CriouBloqueio", "BloqueioData", bloqueio.Id,
+            $"Data: {bloqueio.Data:dd/MM/yyyy} · {alvoDetalhe}");
+
         return CreatedAtAction(nameof(Listar), new { id = bloqueio.Id },
             new { bloqueio.Id, mensagem = "Bloqueio cadastrado com sucesso!" });
     }
@@ -75,8 +86,17 @@ public class BloqueiosDataController : ControllerBase
         if (bloqueio == null)
             return NotFound(new { erro = "Bloqueio não encontrado." });
 
+        var dataBloqueio = bloqueio.Data;
+        var barbeiroIdBloqueio = bloqueio.BarbeiroId;
+
         _db.BloqueiosData.Remove(bloqueio);
         await _db.SaveChangesAsync();
+
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        var alvoDetalhe = barbeiroIdBloqueio.HasValue ? $"BarbeiroId: {barbeiroIdBloqueio}" : "Global (todos os barbeiros)";
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "RemoveuBloqueio", "BloqueioData", id,
+            $"Data: {dataBloqueio:dd/MM/yyyy} · {alvoDetalhe}");
 
         return NoContent();
     }

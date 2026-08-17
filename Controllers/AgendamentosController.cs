@@ -17,12 +17,14 @@ public class AgendamentosController : ControllerBase
     private readonly AppDbContext _db;
     private readonly AgendamentoService _agendamentoService;
     private readonly EmailService _emailService;
+    private readonly LogAdminService _logAdminService;
 
-    public AgendamentosController(AppDbContext db, AgendamentoService agendamentoService, EmailService emailService)
+    public AgendamentosController(AppDbContext db, AgendamentoService agendamentoService, EmailService emailService, LogAdminService logAdminService)
     {
         _db = db;
         _agendamentoService = agendamentoService;
         _emailService = emailService;
+        _logAdminService = logAdminService;
     }
 
     // Público: ver horários disponíveis de um barbeiro numa data
@@ -221,6 +223,12 @@ public class AgendamentosController : ControllerBase
             agendamento.CanceladoPor = "Barbeiro";
         }
         await _db.SaveChangesAsync();
+
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        var acao = dto.Status == "Confirmado" ? "ConfirmouAgendamento" : "CancelouAgendamento";
+        await _logAdminService.RegistrarAsync(adminId, adminNome, acao, "Agendamento", agendamento.Id,
+            $"Cliente: {agendamento.Usuario.Nome} · Barbeiro: {agendamento.Barbeiro.Nome} · Serviço: {agendamento.Servico.Nome} · Data/Hora: {agendamento.DataHoraInicio:dd/MM/yyyy 'às' HH:mm}");
 
         // Envia e-mail de acordo com o novo status
         var dataFormatada = agendamento.DataHoraInicio.ToString("dd/MM/yyyy 'às' HH:mm");

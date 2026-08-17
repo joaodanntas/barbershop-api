@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Disponibilidade> Disponibilidades { get; set; }
     public DbSet<Agendamento> Agendamentos { get; set; }
     public DbSet<BloqueioData> BloqueiosData { get; set; }
+    public DbSet<LogAdmin> LogsAdmin { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

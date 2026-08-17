@@ -1,9 +1,11 @@
 ﻿using BarberShopApi.Data;
 using BarberShopApi.DTOs;
 using BarberShopApi.Models;
+using BarberShopApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BarberShopApi.Controllers;
 
@@ -12,10 +14,12 @@ namespace BarberShopApi.Controllers;
 public class BarbeirosController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly LogAdminService _logAdminService;
 
-    public BarbeirosController(AppDbContext db)
+    public BarbeirosController(AppDbContext db, LogAdminService logAdminService)
     {
         _db = db;
+        _logAdminService = logAdminService;
     }
 
     // Público: qualquer um pode ver os barbeiros disponíveis
@@ -56,6 +60,11 @@ public class BarbeirosController : ControllerBase
         _db.Barbeiros.Add(barbeiro);
         await _db.SaveChangesAsync();
 
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "CriouBarbeiro", "Barbeiro", barbeiro.Id,
+            $"Nome: {barbeiro.Nome}");
+
         return CreatedAtAction(nameof(ListarAtivos),
             new BarbeiroResponseDto(barbeiro.Id, barbeiro.Nome, barbeiro.Telefone, barbeiro.Ativo));
     }
@@ -74,6 +83,11 @@ public class BarbeirosController : ControllerBase
 
         await _db.SaveChangesAsync();
 
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "EditouBarbeiro", "Barbeiro", barbeiro.Id,
+            $"Nome: {barbeiro.Nome}");
+
         return Ok(new BarbeiroResponseDto(barbeiro.Id, barbeiro.Nome, barbeiro.Telefone, barbeiro.Ativo));
     }
 
@@ -89,6 +103,11 @@ public class BarbeirosController : ControllerBase
         barbeiro.Ativo = false;
         await _db.SaveChangesAsync();
 
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "DesativouBarbeiro", "Barbeiro", barbeiro.Id,
+            $"Nome: {barbeiro.Nome}");
+
         return NoContent();
     }
 
@@ -103,6 +122,11 @@ public class BarbeirosController : ControllerBase
 
         barbeiro.Ativo = true;
         await _db.SaveChangesAsync();
+
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminNome = User.FindFirstValue(ClaimTypes.Name)!;
+        await _logAdminService.RegistrarAsync(adminId, adminNome, "AtivouBarbeiro", "Barbeiro", barbeiro.Id,
+            $"Nome: {barbeiro.Nome}");
 
         return NoContent();
     }

@@ -72,6 +72,7 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddScoped<AgendamentoService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<LogAdminService>();
 builder.Services.AddHostedService<LembreteAgendamentoService>();
 
 var app = builder.Build();
