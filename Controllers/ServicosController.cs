@@ -140,4 +140,16 @@ public class ServicosController : ControllerBase
 
         return NoContent();
     }
+
+    // Admin: ver todos incluindo inativos
+    [HttpGet("todos")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ListarTodos()
+    {
+        var servicos = await _db.Servicos
+            .Select(s => new ServicoResponseDto(s.Id, s.Nome, s.DuracaoMinutos, s.Preco, s.Ativo, s.AntecedenciaMinimaMinutos))
+            .ToListAsync();
+
+        return Ok(servicos);
+    }
 }
