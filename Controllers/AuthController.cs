@@ -65,7 +65,7 @@ public class AuthController : ControllerBase
             .FirstOrDefaultAsync(u => u.Email == dto.Email);
 
         if (usuario == null || !BCrypt.Net.BCrypt.Verify(dto.Senha, usuario.SenhaHash))
-            return Unauthorized(new { erro = "Email ou senha inválidos." });
+            return Unauthorized(new { erro = "Não conseguimos entrar com esses dados. Verifique o e-mail e a senha, ou crie uma conta." });
 
         var token = GerarToken(usuario);
 
