@@ -39,7 +39,6 @@ public class BloqueiosDataController : ControllerBase
 
     // Admin: criar bloqueio (global ou por barbeiro)
     [HttpPost]
-    [HttpPost]
     public async Task<IActionResult> Criar([FromBody] BloqueioDataRequestDto dto)
     {
         if (dto.BarbeiroId.HasValue)
