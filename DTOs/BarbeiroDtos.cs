@@ -2,12 +2,14 @@
 
 public record BarbeiroRequestDto(
     string Nome,
-    string? Telefone
+    string? Telefone,
+    string? FotoBase64
 );
 
 public record BarbeiroResponseDto(
     int Id,
     string Nome,
     string? Telefone,
-    bool Ativo
+    bool Ativo,
+    string? FotoBase64
 );

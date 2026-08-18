@@ -28,7 +28,7 @@ public class BarbeirosController : ControllerBase
     {
         var barbeiros = await _db.Barbeiros
             .Where(b => b.Ativo)
-            .Select(b => new BarbeiroResponseDto(b.Id, b.Nome, b.Telefone, b.Ativo))
+            .Select(b => new BarbeiroResponseDto(b.Id, b.Nome, b.Telefone, b.Ativo, b.FotoBase64))
             .ToListAsync();
 
         return Ok(barbeiros);
@@ -40,21 +40,27 @@ public class BarbeirosController : ControllerBase
     public async Task<IActionResult> ListarTodos()
     {
         var barbeiros = await _db.Barbeiros
-            .Select(b => new BarbeiroResponseDto(b.Id, b.Nome, b.Telefone, b.Ativo))
+            .Select(b => new BarbeiroResponseDto(b.Id, b.Nome, b.Telefone, b.Ativo, b.FotoBase64))
             .ToListAsync();
 
         return Ok(barbeiros);
     }
 
     // Admin: cadastrar novo barbeiro
+    private const int TamanhoMaximoFotoBytes = 2 * 1024 * 1024; // 2 MB
+
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Criar([FromBody] BarbeiroRequestDto dto)
     {
+        if (!string.IsNullOrEmpty(dto.FotoBase64) && !FotoValida(dto.FotoBase64, out var erroFoto))
+            return BadRequest(new { erro = erroFoto });
+
         var barbeiro = new Barbeiro
         {
             Nome = dto.Nome,
-            Telefone = dto.Telefone
+            Telefone = dto.Telefone,
+            FotoBase64 = dto.FotoBase64
         };
 
         _db.Barbeiros.Add(barbeiro);
@@ -66,7 +72,7 @@ public class BarbeirosController : ControllerBase
             $"Nome: {barbeiro.Nome}");
 
         return CreatedAtAction(nameof(ListarAtivos),
-            new BarbeiroResponseDto(barbeiro.Id, barbeiro.Nome, barbeiro.Telefone, barbeiro.Ativo));
+            new BarbeiroResponseDto(barbeiro.Id, barbeiro.Nome, barbeiro.Telefone, barbeiro.Ativo, barbeiro.FotoBase64));
     }
 
     // Admin: editar barbeiro
@@ -78,8 +84,12 @@ public class BarbeirosController : ControllerBase
         if (barbeiro == null)
             return NotFound(new { erro = "Barbeiro não encontrado." });
 
+        if (!string.IsNullOrEmpty(dto.FotoBase64) && !FotoValida(dto.FotoBase64, out var erroFoto))
+            return BadRequest(new { erro = erroFoto });
+
         barbeiro.Nome = dto.Nome;
         barbeiro.Telefone = dto.Telefone;
+        barbeiro.FotoBase64 = dto.FotoBase64;
 
         await _db.SaveChangesAsync();
 
@@ -88,7 +98,7 @@ public class BarbeirosController : ControllerBase
         await _logAdminService.RegistrarAsync(adminId, adminNome, "EditouBarbeiro", "Barbeiro", barbeiro.Id,
             $"Nome: {barbeiro.Nome}");
 
-        return Ok(new BarbeiroResponseDto(barbeiro.Id, barbeiro.Nome, barbeiro.Telefone, barbeiro.Ativo));
+        return Ok(new BarbeiroResponseDto(barbeiro.Id, barbeiro.Nome, barbeiro.Telefone, barbeiro.Ativo, barbeiro.FotoBase64));
     }
 
     // Admin: desativar barbeiro (nunca deletar, pois tem agendamentos vinculados)
@@ -244,5 +254,32 @@ public class BarbeirosController : ControllerBase
         await _db.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private bool FotoValida(string fotoBase64, out string erro)
+    {
+        erro = string.Empty;
+
+        if (!fotoBase64.StartsWith("data:image/"))
+        {
+            erro = "Formato de imagem inválido.";
+            return false;
+        }
+
+        var partes = fotoBase64.Split(',');
+        if (partes.Length != 2)
+        {
+            erro = "Formato de imagem inválido.";
+            return false;
+        }
+
+        var tamanhoBytes = (partes[1].Length * 3) / 4;
+        if (tamanhoBytes > TamanhoMaximoFotoBytes)
+        {
+            erro = "A imagem deve ter no máximo 2 MB.";
+            return false;
+        }
+
+        return true;
     }
 }
