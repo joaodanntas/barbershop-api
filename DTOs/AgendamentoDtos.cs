@@ -19,7 +19,9 @@ public record AgendamentoResponseDto(
     DateTime DataHoraFim,
     string Status,
     string ClienteNome,
-    string? CanceladoPor
+    string? CanceladoPor,
+    string? ClienteTelefone,
+    string ClienteEmail
 );
 
 public record AtualizarStatusDto(

@@ -4,7 +4,7 @@ public record CadastroDto(
     string Nome,
     string Email,
     string Senha,
-    string? Telefone
+    string Telefone
 );
 
 public record LoginDto(

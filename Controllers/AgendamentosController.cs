@@ -124,7 +124,8 @@ public class AgendamentosController : ControllerBase
             .OrderByDescending(a => a.DataHoraInicio)
             .Select(a => new AgendamentoResponseDto(
                 a.Id, a.Barbeiro.Nome, a.Servico.Nome,
-                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome, a.CanceladoPor))
+                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome, a.CanceladoPor,
+                a.Usuario.Telefone, a.Usuario.Email))
             .ToListAsync();
 
         return Ok(agendamentos);
@@ -194,7 +195,8 @@ public class AgendamentosController : ControllerBase
             .Take(tamanhoPagina)
             .Select(a => new AgendamentoResponseDto(
                 a.Id, a.Barbeiro.Nome, a.Servico.Nome,
-                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome, a.CanceladoPor))
+                a.DataHoraInicio, a.DataHoraFim, a.Status, a.Usuario.Nome, a.CanceladoPor,
+                a.Usuario.Telefone, a.Usuario.Email))
             .ToListAsync();
 
         return Ok(new PaginaDto<AgendamentoResponseDto>(agendamentos, pagina, totalPaginas, totalItens));

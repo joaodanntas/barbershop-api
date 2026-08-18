@@ -36,7 +36,9 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Cadastro([FromBody] CadastroDto dto)
     {
-        // Verifica se email já existe
+        if (string.IsNullOrWhiteSpace(dto.Telefone))
+            return BadRequest(new { erro = "Informe o telefone." });
+
         if (await _db.Usuarios.AnyAsync(u => u.Email == dto.Email))
             return BadRequest(new { erro = "Email já cadastrado." });
 
